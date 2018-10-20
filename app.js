@@ -9,14 +9,11 @@ function makeFile(path, content) {
     for (var i in paths) {
         currentPath += paths[i] + "/";
         if (vdirPath[paths[i]] === undefined) {
-            console.log("Spawning");
             Vue.set(vdirPath, paths[i], { type: "folder", path: currentPath })
         }
 
         vdirPath = vdirPath[paths[i]];
     }
-
-    console.log(name, path)
 
     var ext = name.split(".").pop();
     var type = "text";
@@ -27,6 +24,9 @@ function makeFile(path, content) {
             break;
         case "html":
             type = "html";
+            break;
+        case "css":
+            type = "css";
             break;
     }
 
@@ -65,6 +65,26 @@ function runCode() {
                         scripts[i].remove();
                     }
                 }
+            }
+
+            var styles = w.document.querySelectorAll('link'),
+                i;
+
+            for (i = 0; i < styles.length; ++i) {
+                let href = styles[i].getAttribute("href");
+                if (href != null) {
+                    if (href.startsWith("./") || href.startsWith("/")) {
+                        if (pathToVDir(href) != undefined) {
+                            styles[i].removeAttribute('href');
+                            styles[i].innerHTML = pathToVDir(href).content;
+                            let temp = document.createElement("style");
+                            temp.innerHTML = pathToVDir(href).content;
+                            w.document.body.appendChild(temp);
+                            styles[i].remove();
+                        }
+                    }
+                }
+
             }
 
             break;
@@ -107,6 +127,11 @@ Vue.component('file-listing', {
                 case "html":
                     editor.session.setMode("ace/mode/html");
                     break;
+                case "css":
+                    editor.session.setMode("ace/mode/css");
+                    break;
+                default:
+                    editor.session.setMode("ace/mode/text");
             }
         }
     },
@@ -132,9 +157,7 @@ Vue.component('folder-listing', {
                 </div>
               </div>`,
     created() {
-        console.log(this._props.file.path);
         this.id = this._props.file.path.replace(/\//g, '');
-        console.log(this._props.file.path);
     }
 
 });
@@ -151,11 +174,12 @@ var app = new Vue({
 
 var editor = ace.edit("editor");
 editor.setTheme("ace/theme/monokai");
-editor.session.setMode("ace/mode/javascript");
+editor.session.setMode("ace/mode/text");
 
 
 makeFile("/js/main.js", "alert(1);");
-makeFile("/index.html", "<h1>Hello :D</h1><script src='/js/main.js'></script>");
+makeFile("/css/main.css", "html, body {\n\tbackground-color:red; \n\twidth:100%\n}");
+makeFile("/index.html", "<link rel='stylesheet' href='./css/main.css' type='text/css' />\n<h1>Hello :D</h1>\n<script src='/js/main.js'></script>");
 
 document.getElementById("runCode").onclick = runCode;
 document.getElementById("createFile").onclick = function() {
