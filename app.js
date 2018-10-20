@@ -58,14 +58,14 @@ function runCode() {
 
             var content = editor.getValue();
 
-            w.document.body.innerHTML = content;
+            w.document.write(content);
 
             var scripts = w.document.querySelectorAll('script'),
                 i;
 
             for (i = 0; i < scripts.length; ++i) {
                 let src = scripts[i].getAttribute('src');
-                if (pathToVDir(src)) {
+                if (pathToVDir(src) != undefined) {
                     scripts[i].removeAttribute('src');
                     scripts[i].innerHTML = pathToVDir(src).content;
                     let temp = document.createElement("script");
@@ -96,7 +96,6 @@ function runCode() {
             var remotes = searchForRemotes(app.vdir);
 
             for (var i in remotes) {
-                console.log(remotes[i]);
                 w.document.body.innerHTML = w.document.body.innerHTML.replaceAll("." + remotes[i].path, remotes[i].url);
                 w.document.body.innerHTML = w.document.body.innerHTML.replaceAll(remotes[i].path, remotes[i].url);
                 w.document.body.innerHTML = w.document.body.innerHTML.replaceAll(remotes[i].path.substr(1), remotes[i].url);
@@ -108,7 +107,6 @@ function runCode() {
 }
 
 function searchForRemotes(vdir) {
-    console.log(vdir);
     var list = [];
     for (var i in vdir) {
         if (typeof vdir[i] != 'object') { continue; }
@@ -117,30 +115,33 @@ function searchForRemotes(vdir) {
         }
         else if (vdir[i].type == 'remote') {
             list.push(vdir[i]);
-            console.log('found');
         }
     }
     return list;
 }
 
 function pathToVDir(path) {
-    let paths = path.split("/");
-    console.log(paths);
-    if (paths[0] == "." || paths[0] == "") {
-        paths.shift();
+    try {
+        let paths = path.split("/");
+        if (paths[0] == "." || paths[0] == "") {
+            paths.shift();
+        }
+
+
+        var vdirPath = app.vdir;
+
+        var currentPath = "/";
+        for (var i in paths) {
+            currentPath += paths[i] + "/";
+
+            vdirPath = vdirPath[paths[i]];
+        }
+
+        return vdirPath;
     }
-
-
-    var vdirPath = app.vdir;
-
-    var currentPath = "/";
-    for (var i in paths) {
-        currentPath += paths[i] + "/";
-
-        vdirPath = vdirPath[paths[i]];
+    catch (err) {
+        return undefined;
     }
-
-    return vdirPath;
 }
 
 
