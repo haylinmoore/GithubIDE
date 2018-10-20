@@ -65,15 +65,13 @@ function runCode() {
 
             for (i = 0; i < scripts.length; ++i) {
                 let src = scripts[i].getAttribute('src');
-                if (src.startsWith("./") || src.startsWith("/")) {
-                    if (pathToVDir(src) != undefined) {
-                        scripts[i].removeAttribute('src');
-                        scripts[i].innerHTML = pathToVDir(src).content;
-                        let temp = document.createElement("script");
-                        temp.innerHTML = pathToVDir(src).content;
-                        w.document.body.appendChild(temp);
-                        scripts[i].remove();
-                    }
+                if (pathToVDir(src)) {
+                    scripts[i].removeAttribute('src');
+                    scripts[i].innerHTML = pathToVDir(src).content;
+                    let temp = document.createElement("script");
+                    temp.innerHTML = pathToVDir(src).content;
+                    w.document.body.appendChild(temp);
+                    scripts[i].remove();
                 }
             }
 
@@ -83,15 +81,13 @@ function runCode() {
             for (i = 0; i < styles.length; ++i) {
                 let href = styles[i].getAttribute("href");
                 if (href != null) {
-                    if (href.startsWith("./") || href.startsWith("/")) {
-                        if (pathToVDir(href) != undefined) {
-                            styles[i].removeAttribute('href');
-                            styles[i].innerHTML = pathToVDir(href).content;
-                            let temp = document.createElement("style");
-                            temp.innerHTML = pathToVDir(href).content;
-                            w.document.body.appendChild(temp);
-                            styles[i].remove();
-                        }
+                    if (pathToVDir(href)) {
+                        styles[i].removeAttribute('href');
+                        styles[i].innerHTML = pathToVDir(href).content;
+                        let temp = document.createElement("style");
+                        temp.innerHTML = pathToVDir(href).content;
+                        w.document.body.appendChild(temp);
+                        styles[i].remove();
                     }
                 }
 
@@ -103,6 +99,7 @@ function runCode() {
                 console.log(remotes[i]);
                 w.document.body.innerHTML = w.document.body.innerHTML.replaceAll("." + remotes[i].path, remotes[i].url);
                 w.document.body.innerHTML = w.document.body.innerHTML.replaceAll(remotes[i].path, remotes[i].url);
+                w.document.body.innerHTML = w.document.body.innerHTML.replaceAll(remotes[i].path.substr(1), remotes[i].url);
             }
 
             break;
@@ -128,7 +125,11 @@ function searchForRemotes(vdir) {
 
 function pathToVDir(path) {
     let paths = path.split("/");
-    paths.shift();
+    console.log(paths);
+    if (paths[0] == "." || paths[0] == "") {
+        paths.shift();
+    }
+
 
     var vdirPath = app.vdir;
 
