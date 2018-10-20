@@ -29,9 +29,14 @@
 <body>
     <div id="app">
         <div id="fileEditor">
-            <a href="#" class="btn btn-primary btn-lg" id="runCode">
-              <span class="glyphicon glyphicon-play"></span> Run
+            <div class="btn-group btn-group-justified" style="width:100%;">
+                <a href="#" class="btn btn-primary btn-lg" id="runCode" style="width:100%;">
+              Run
             </a>
+                <a href="#" class="btn btn-success btn-lg" id="createFile" style="width:100%;">
+              Create
+            </a>
+            </div>
             <div v-for="file in vdir">
                 <file-listing v-bind:file="file" v-if="file.type != 'folder'"></file-listing>
                 <folder-listing v-bind:file="file" v-else></folder-listing>

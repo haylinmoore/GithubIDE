@@ -121,3 +121,9 @@ makeFile("/test/alert.js", "alert(1);");
 makeFile("/test/boop/console.js", "console.log(1);");
 
 document.getElementById("runCode").onclick = runCode;
+document.getElementById("createFile").onclick = function() {
+    var name = prompt("Path of file, Start with /");
+    if (name != "") {
+        makeFile(name, "");
+    }
+}
