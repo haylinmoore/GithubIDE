@@ -25,6 +25,9 @@ function makeFile(path, content) {
         case "js":
             type = "js";
             break;
+        case "html":
+            type = "html";
+            break;
     }
 
     Vue.set(vdirPath, name, { content: content, type: type, path: path });
@@ -40,6 +43,32 @@ function runCode() {
         case "js":
             eval(editor.getValue());
             break;
+        case "html":
+            var w = window.open('', "", "scrollbars=yes");
+
+            var content = editor.getValue();
+
+            w.document.body.innerHTML = content;
+
+            var scripts = w.document.querySelectorAll('script'),
+                i;
+
+            for (i = 0; i < scripts.length; ++i) {
+                let src = scripts[i].getAttribute('src');
+                if (src.startsWith("./") || src.startsWith("/")) {
+                    if (pathToVDir(src) != undefined) {
+                        scripts[i].removeAttribute('src');
+                        scripts[i].innerHTML = pathToVDir(src).content;
+                        let temp = document.createElement("script");
+                        temp.innerHTML = pathToVDir(src).content;
+                        w.document.body.appendChild(temp);
+                        scripts[i].remove();
+                    }
+                }
+            }
+
+            break;
+
     }
 }
 
@@ -70,6 +99,15 @@ Vue.component('file-listing', {
             let path = pathToVDir(this._props.file.path);
             editor.setValue(path.content);
             currentFile = path;
+
+            switch (currentFile.type) {
+                case "js":
+                    editor.session.setMode("ace/mode/javascript");
+                    break;
+                case "html":
+                    editor.session.setMode("ace/mode/html");
+                    break;
+            }
         }
     },
     template: `<div class="card"> <div class="card-header"> <a class="collapsed card-link" href="#" v-on:click="load">{{file.path}}</a> </div> </div>`
@@ -116,14 +154,14 @@ editor.setTheme("ace/theme/monokai");
 editor.session.setMode("ace/mode/javascript");
 
 
-makeFile("/test/alert.js", "alert(1);");
-
-makeFile("/test/boop/console.js", "console.log(1);");
+makeFile("/js/main.js", "alert(1);");
+makeFile("/index.html", "<h1>Hello :D</h1><script src='/js/main.js'></script>");
 
 document.getElementById("runCode").onclick = runCode;
 document.getElementById("createFile").onclick = function() {
-    var name = prompt("Path of file, Start with /");
-    if (name != "") {
-        makeFile(name, "");
+    var name = "";
+    while (name === "" || name.charAt(0) != "/") {
+        name = prompt("Path of file, Start with /");
     }
+    makeFile(name, "");
 }
