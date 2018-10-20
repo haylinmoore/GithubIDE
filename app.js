@@ -1,3 +1,8 @@
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.replace(new RegExp(search, 'g'), replacement);
+};
+
 function makeFile(path, content, remote) {
     let paths = path.split("/");
     let name = paths.pop();
@@ -92,9 +97,33 @@ function runCode() {
 
             }
 
+            var remotes = searchForRemotes(app.vdir);
+
+            for (var i in remotes) {
+                console.log(remotes[i]);
+                w.document.body.innerHTML = w.document.body.innerHTML.replaceAll("." + remotes[i].path, remotes[i].url);
+                w.document.body.innerHTML = w.document.body.innerHTML.replaceAll(remotes[i].path, remotes[i].url);
+            }
+
             break;
 
     }
+}
+
+function searchForRemotes(vdir) {
+    console.log(vdir);
+    var list = [];
+    for (var i in vdir) {
+        if (typeof vdir[i] != 'object') { continue; }
+        if (vdir[i].type === 'folder') {
+            list = list.concat(searchForRemotes(vdir[i]));
+        }
+        else if (vdir[i].type == 'remote') {
+            list.push(vdir[i]);
+            console.log('found');
+        }
+    }
+    return list;
 }
 
 function pathToVDir(path) {
@@ -189,9 +218,10 @@ editor.session.setMode("ace/mode/text");
 
 
 makeFile("/js/main.js", "alert(1);");
-makeFile("/css/main.css", "html, body {\n\tbackground-color:red; \n\twidth:100%\n}");
+makeFile("/css/main.css", "html, body {\n\tbackground-color:red; \n\tbackground-image: url('./imgs/mountain.jpg'); \n\twidth:100%\n}");
 makeFile("/imgs/test.png", "https://dummyimage.com/600x400/000/fff", true);
-makeFile("/index.html", "<link rel='stylesheet' href='./css/main.css' type='text/css' />\n<h1>Hello :D</h1>\n<script src='/js/main.js'></script>");
+makeFile("/imgs/mountain.jpg", "https://www.w3schools.com/css/mountain.jpg", true)
+makeFile("/index.html", "<link rel='stylesheet' href='./css/main.css' type='text/css' />\n<h1>Hello :D</h1>\n<img src='./imgs/test.png'>\n<script src='/js/main.js'></script>");
 
 document.getElementById("runCode").onclick = runCode;
 document.getElementById("createFile").onclick = function() {
