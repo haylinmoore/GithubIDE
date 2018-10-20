@@ -1,4 +1,4 @@
-function makeFile(path, content) {
+function makeFile(path, content, remote) {
     let paths = path.split("/");
     let name = paths.pop();
     paths.shift();
@@ -30,7 +30,12 @@ function makeFile(path, content) {
             break;
     }
 
-    Vue.set(vdirPath, name, { content: content, type: type, path: path });
+    if (remote) {
+        Vue.set(vdirPath, name, { url: content, type: "remote", path: path });
+    }
+    else {
+        Vue.set(vdirPath, name, { content: content, type: type, path: path });
+    }
 }
 
 var currentFile = null;
@@ -113,6 +118,12 @@ Vue.component('file-listing', {
     props: ['file'],
     methods: {
         load: function(event) {
+
+            if (this._props.file.type == "remote") {
+                window.open(this._props.file.url, '_blank');
+                return;
+            }
+
             if (currentFile != null)
                 currentFile.content = editor.getValue();
 
@@ -179,6 +190,7 @@ editor.session.setMode("ace/mode/text");
 
 makeFile("/js/main.js", "alert(1);");
 makeFile("/css/main.css", "html, body {\n\tbackground-color:red; \n\twidth:100%\n}");
+makeFile("/imgs/test.png", "https://dummyimage.com/600x400/000/fff", true);
 makeFile("/index.html", "<link rel='stylesheet' href='./css/main.css' type='text/css' />\n<h1>Hello :D</h1>\n<script src='/js/main.js'></script>");
 
 document.getElementById("runCode").onclick = runCode;
