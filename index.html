@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Geddit</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://bootswatch.com/4/darkly/bootstrap.min.css" type="text/css" />
+    <style type="text/css" media="screen">
+        #editor {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 200px;
+        }
+
+        #fileEditor {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 200px;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="fileEditor">
+            <a href="#" class="btn btn-primary btn-lg" id="runCode">
+              <span class="glyphicon glyphicon-play"></span> Run
+            </a>
+            <div v-for="file in vdir">
+                <file-listing v-bind:file="file" v-if="file.type != 'folder'"></file-listing>
+                <folder-listing v-bind:file="file" v-else></folder-listing>
+            </div>
+
+        </div>
+
+    </div>
+    <div id="editor">
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.1/ace.js " type="text/javascript " charset="utf-8 "></script>
+    <script type="text/javascript " src="/app.js"></script>
+</body>
+
+</html>
