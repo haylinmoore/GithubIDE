@@ -225,9 +225,22 @@ makeFile("/index.html", "<link rel='stylesheet' href='./css/main.css' type='text
 
 document.getElementById("runCode").onclick = runCode;
 document.getElementById("createFile").onclick = function() {
+
+    var type = prompt("Type 'remote' for remote file") === 'remote' ? true : false;
+
     var name = "";
     while (name === "" || name.charAt(0) != "/") {
         name = prompt("Path of file, Start with /");
     }
-    makeFile(name, "");
+
+    if (type) {
+        var url = "";
+        while (url === "") {
+            url = prompt("Remote Path");
+        }
+        makeFile(name, url, type);
+    }
+    else {
+        makeFile(name, "");
+    }
 }
