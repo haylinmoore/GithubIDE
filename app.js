@@ -72,7 +72,12 @@ function importRepo() {
                     type: "get",
                     url: files[id].download_url,
                     success: function(data, text) {
-                        makeFile("/" + files[id].path, data, false);
+                        if (files[id].name.endsWith(".jpg") || files[id].name.endsWith(".jpeg") || files[id].name.endsWith(".png")) {
+                            makeFile("/" + files[id].path, files[id].download_url, true);
+                        }
+                        else {
+                            makeFile("/" + files[id].path, data, false);
+                        }
                     },
 
                     error: function(request, status, error) {
