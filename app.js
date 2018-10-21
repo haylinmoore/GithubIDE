@@ -43,6 +43,98 @@ function makeFile(path, content, remote) {
     }
 }
 
+function importRepo() {
+    // Hug me I'm scared, this isnt going to be fun or pretty. Sorry to future Hampton trying to debug/figure this out <3
+
+    /*
+    Data Needed
+    Get the commit id - https://api.github.com/repos/herohamp/GithubIDE/branches/master
+    Get the contents - https://api.github.com/repos/herohamp/GithubIDE/contents/
+    Proxy through jsdelivr, thanks school :( - https://cdn.jsdelivr.net/gh/herohamp/GithubIDE@"commitid"/.gitignore
+    */
+
+    // Get ready for the async spaghetti probably
+
+    // GetContent -> GetCommitID -> convertToJSDelivr -> uploadToVDir
+
+    function uploadToVDir(files) {
+        console.log(files);
+        for (var i in files) {
+            let id = i;
+            $.ajax({
+                type: "get",
+                url: files[id].download_url,
+                success: function(data, text) {
+                    makeFile("/" + files[id].path, data, false);
+                },
+
+                error: function(request, status, error) {
+                    alert("Error");
+                }
+            });
+
+        }
+    }
+
+    function convertToJSDelivr(gitrepo, files, sha) {
+        for (var i in files) {
+            files[i].download_url = "https://cdn.jsdelivr.net/gh/" + gitrepo[0] + "/" + gitrepo[1] + "@" + sha + "/" + files[i].name
+        }
+        uploadToVDir(files);
+    }
+
+    function getContent(gitrepo) {
+        $.ajax({
+            type: "get",
+            url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/contents/?access_token=" + localStorage.getItem("oauth"),
+            success: function(data, text) {
+                getCommitID(gitrepo, data);
+            },
+
+            error: function(request, status, error) {
+                alert("Error");
+            }
+        });
+    }
+
+    function getCommitID(gitrepo, files) {
+        $.ajax({
+            type: "get",
+            url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/branches/master?access_token=" + localStorage.getItem("oauth"),
+            success: function(data, text) {
+                console.log("Got Commit ID", data.commit.sha);
+                convertToJSDelivr(gitrepo, files, data.commit.sha);
+            },
+            error: function(request, status, error) {
+                alert("Error");
+            }
+        });
+    }
+
+    getContent([prompt("Username of Repo Owner"), prompt("Repo")]);
+
+}
+
+function authenticate() {
+    var oauth = localStorage.getItem("oauth") || prompt("Paste your oAuth Key. See the README for instructions on generation");
+
+    $.ajax({
+        type: "get",
+        url: "https://api.github.com/user?access_token=" + oauth,
+        success: function(data, text) {
+            alert("Login Succesful :D");
+            localStorage.setItem("oauth", oauth);
+            importRepo();
+        },
+        error: function(request, status, error) {
+            alert("Login Error, please check your oAuth key");
+            localStorage.removeItem("oauth");
+            authenticate();
+        }
+    });
+
+}
+
 var currentFile = null;
 
 function runCode() {
@@ -62,9 +154,11 @@ function runCode() {
 
             var scripts = w.document.querySelectorAll('script'),
                 i;
-
+            console.log(scripts);
             for (i = 0; i < scripts.length; ++i) {
+
                 let src = scripts[i].getAttribute('src');
+                console.log(src);
                 if (pathToVDir(src) != undefined) {
                     scripts[i].removeAttribute('src');
                     scripts[i].innerHTML = pathToVDir(src).content;
@@ -219,11 +313,12 @@ editor.setTheme("ace/theme/monokai");
 editor.session.setMode("ace/mode/text");
 
 
-makeFile("/js/main.js", "alert(1);");
+/*makeFile("/js/main.js", "alert(1);");
 makeFile("/css/main.css", "html, body {\n\tbackground-color:red; \n\tbackground-image: url('./imgs/mountain.jpg'); \n\twidth:100%\n}");
 makeFile("/imgs/test.png", "https://dummyimage.com/600x400/000/fff", true);
 makeFile("/imgs/mountain.jpg", "https://www.w3schools.com/css/mountain.jpg", true)
 makeFile("/index.html", "<link rel='stylesheet' href='./css/main.css' type='text/css' />\n<h1>Hello :D</h1>\n<img src='./imgs/test.png'>\n<script src='/js/main.js'></script>");
+*/
 
 document.getElementById("runCode").onclick = runCode;
 document.getElementById("createFile").onclick = function() {
@@ -246,3 +341,5 @@ document.getElementById("createFile").onclick = function() {
         makeFile(name, "");
     }
 }
+
+authenticate();
