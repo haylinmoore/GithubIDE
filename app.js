@@ -56,31 +56,53 @@ function importRepo() {
     // Get ready for the async spaghetti probably
 
     // GetContent -> GetCommitID -> convertToJSDelivr -> uploadToVDir
+    // If there is a folder detect it in uploadToVDir, then pass that to a recursive version of GetContent/ConvertToJSDelivr
 
-    function uploadToVDir(files) {
+    function uploadToVDir(gitrepo, files, sha) {
         console.log(files);
         for (var i in files) {
             let id = i;
-            $.ajax({
-                type: "get",
-                url: files[id].download_url,
-                success: function(data, text) {
-                    makeFile("/" + files[id].path, data, false);
-                },
 
-                error: function(request, status, error) {
-                    alert("Error");
-                }
-            });
+            if (files[id].type === "dir") {
+                recursiveGetContents(gitrepo, files[id].path, sha);
+            }
+            else {
+
+                $.ajax({
+                    type: "get",
+                    url: files[id].download_url,
+                    success: function(data, text) {
+                        makeFile("/" + files[id].path, data, false);
+                    },
+
+                    error: function(request, status, error) {
+                        alert("Error");
+                    }
+                });
+            }
 
         }
     }
 
+    function recursiveGetContents(gitrepo, path, sha) {
+        $.ajax({
+            type: "get",
+            url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/contents/" + path + "?access_token=" + localStorage.getItem("oauth"),
+            success: function(data, text) {
+                convertToJSDelivr(gitrepo, data, sha);
+            },
+
+            error: function(request, status, error) {
+                alert("Error");
+            }
+        });
+    }
+
     function convertToJSDelivr(gitrepo, files, sha) {
         for (var i in files) {
-            files[i].download_url = "https://cdn.jsdelivr.net/gh/" + gitrepo[0] + "/" + gitrepo[1] + "@" + sha + "/" + files[i].name
+            files[i].download_url = "https://cdn.jsdelivr.net/gh/" + gitrepo[0] + "/" + gitrepo[1] + "@" + sha + "/" + files[i].path
         }
-        uploadToVDir(files);
+        uploadToVDir(gitrepo, files, sha);
     }
 
     function getContent(gitrepo) {
