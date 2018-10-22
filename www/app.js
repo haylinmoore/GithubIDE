@@ -43,124 +43,193 @@ function makeFile(path, content, remote) {
     }
 }
 
-function importRepo() {
-    // Hug me I'm scared, this isnt going to be fun or pretty. Sorry to future Hampton trying to debug/figure this out <3
+var modes = {};
 
-    /*
-    Data Needed
-    Get the commit id - https://api.github.com/repos/herohamp/GithubIDE/branches/master
-    Get the contents - https://api.github.com/repos/herohamp/GithubIDE/contents/
-    Proxy through jsdelivr, thanks school :( - https://cdn.jsdelivr.net/gh/herohamp/GithubIDE@"commitid"/.gitignore
-    */
+modes["php"] = function() {
+    app.mode = "editor";
 
-    // Get ready for the async spaghetti probably
+    this.import = function(server, key) {
 
-    // GetContent -> GetCommitID -> convertToJSDelivr -> uploadToVDir
-    // If there is a folder detect it in uploadToVDir, then pass that to a recursive version of GetContent/ConvertToJSDelivr
-
-    function uploadToVDir(gitrepo, files, sha) {
-        console.log(files);
-        for (var i in files) {
-            let id = i;
-
-            if (files[id].type === "dir") {
-                recursiveGetContents(gitrepo, files[id].path, sha);
+        function uploadToVDir(data) {
+            for (var i in data) {
+                makeFile(data[i][0], data[i][1], false);
             }
-            else {
-
-                $.ajax({
-                    type: "get",
-                    url: files[id].download_url,
-                    success: function(data, text) {
-                        if (files[id].name.endsWith(".jpg") || files[id].name.endsWith(".jpeg") || files[id].name.endsWith(".png")) {
-                            makeFile("/" + files[id].path, files[id].download_url, true);
-                        }
-                        else {
-                            makeFile("/" + files[id].path, data, false);
-                        }
-                    },
-
-                    error: function(request, status, error) {
-                        alert("Error");
-                    }
-                });
-            }
-
         }
-    }
 
-    function recursiveGetContents(gitrepo, path, sha) {
-        $.ajax({
-            type: "get",
-            url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/contents/" + path + "?access_token=" + localStorage.getItem("oauth"),
-            success: function(data, text) {
-                convertToJSDelivr(gitrepo, data, sha);
-            },
+        function getContent(server, key) {
+            $.ajax({
+                type: "get",
+                url: server + "/ultimumide/" + "?key=" + key + "&req=files",
+                success: function(data, text) {
+                    uploadToVDir(data);
+                },
 
-            error: function(request, status, error) {
-                alert("Error");
-            }
-        });
-    }
-
-    function convertToJSDelivr(gitrepo, files, sha) {
-        for (var i in files) {
-            files[i].download_url = "https://cdn.jsdelivr.net/gh/" + gitrepo[0] + "/" + gitrepo[1] + "@" + sha + "/" + files[i].path
+                error: function(request, status, error) {
+                    alert("Error");
+                }
+            });
         }
-        uploadToVDir(gitrepo, files, sha);
+
+        getContent(server, key)
     }
 
-    function getContent(gitrepo) {
+    this.authenticate = function() {
+        var server = localStorage.getItem("php-server") || prompt("What is the URL of your server? Excluding the /ultimumide/");
+
+        var key = localStorage.getItem("php-key") || prompt("What is the login key for your server?")
+
         $.ajax({
             type: "get",
-            url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/contents/?access_token=" + localStorage.getItem("oauth"),
+            url: server + "/ultimumide/" + "?key=" + key,
             success: function(data, text) {
-                getCommitID(gitrepo, data);
-            },
-
-            error: function(request, status, error) {
-                alert("Error");
-            }
-        });
-    }
-
-    function getCommitID(gitrepo, files) {
-        $.ajax({
-            type: "get",
-            url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/branches/master?access_token=" + localStorage.getItem("oauth"),
-            success: function(data, text) {
-                console.log("Got Commit ID", data.commit.sha);
-                convertToJSDelivr(gitrepo, files, data.commit.sha);
+                alert("Login Succesful :D");
+                localStorage.setItem("php-key", key);
+                localStorage.setItem("php-server", server);
+                modes["php"]().import(server, key);
             },
             error: function(request, status, error) {
-                alert("Error");
+                alert("Login Error, please check the server and key");
+                localStorage.removeItem("php-key");
+                localStorage.removeItem("php-server");
+                modes["php"]().authenticate();
             }
         });
+
     }
 
-    getContent([prompt("Username of Repo Owner"), prompt("Repo")]);
-
+    return this;
 }
 
-function authenticate() {
-    var oauth = localStorage.getItem("oauth") || prompt("Paste your oAuth Key. See the README for instructions on generation");
 
-    $.ajax({
-        type: "get",
-        url: "https://api.github.com/user?access_token=" + oauth,
-        success: function(data, text) {
-            alert("Login Succesful :D");
-            localStorage.setItem("oauth", oauth);
-            importRepo();
-        },
-        error: function(request, status, error) {
-            alert("Login Error, please check your oAuth key");
-            localStorage.removeItem("oauth");
-            authenticate();
+
+modes["github"] = function() {
+    app.mode = "editor";
+
+    this.import = function() {
+        // Hug me I'm scared, this isnt going to be fun or pretty. Sorry to future Hampton trying to debug/figure this out <3
+
+        /*
+        Data Needed
+        Get the commit id - https://api.github.com/repos/herohamp/GithubIDE/branches/master
+        Get the contents - https://api.github.com/repos/herohamp/GithubIDE/contents/
+        Proxy through jsdelivr, thanks school :( - https://cdn.jsdelivr.net/gh/herohamp/GithubIDE@"commitid"/.gitignore
+        */
+
+        // Get ready for the async spaghetti probably
+
+        // GetContent -> GetCommitID -> convertToJSDelivr -> uploadToVDir
+        // If there is a folder detect it in uploadToVDir, then pass that to a recursive version of GetContent/ConvertToJSDelivr
+
+        function uploadToVDir(gitrepo, files, sha) {
+            console.log(files);
+            for (var i in files) {
+                let id = i;
+
+                if (files[id].type === "dir") {
+                    recursiveGetContents(gitrepo, files[id].path, sha);
+                }
+                else {
+
+                    $.ajax({
+                        type: "get",
+                        url: files[id].download_url,
+                        success: function(data, text) {
+                            if (files[id].name.endsWith(".jpg") || files[id].name.endsWith(".jpeg") || files[id].name.endsWith(".png")) {
+                                makeFile("/" + files[id].path, files[id].download_url, true);
+                            }
+                            else {
+                                makeFile("/" + files[id].path, data, false);
+                            }
+                        },
+
+                        error: function(request, status, error) {
+                            alert("Error");
+                        }
+                    });
+                }
+
+            }
         }
-    });
 
+        function recursiveGetContents(gitrepo, path, sha) {
+            $.ajax({
+                type: "get",
+                url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/contents/" + path + "?access_token=" + localStorage.getItem("oauth"),
+                success: function(data, text) {
+                    convertToJSDelivr(gitrepo, data, sha);
+                },
+
+                error: function(request, status, error) {
+                    alert("Error");
+                }
+            });
+        }
+
+        function convertToJSDelivr(gitrepo, files, sha) {
+            for (var i in files) {
+                files[i].download_url = "https://cdn.jsdelivr.net/gh/" + gitrepo[0] + "/" + gitrepo[1] + "@" + sha + "/" + files[i].path
+            }
+            uploadToVDir(gitrepo, files, sha);
+        }
+
+        function getContent(gitrepo) {
+            $.ajax({
+                type: "get",
+                url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/contents/?access_token=" + localStorage.getItem("oauth"),
+                success: function(data, text) {
+                    getCommitID(gitrepo, data);
+                },
+
+                error: function(request, status, error) {
+                    alert("Error");
+                }
+            });
+        }
+
+        function getCommitID(gitrepo, files) {
+            $.ajax({
+                type: "get",
+                url: "https://api.github.com/repos/" + gitrepo[0] + "/" + gitrepo[1] + "/branches/master?access_token=" + localStorage.getItem("oauth"),
+                success: function(data, text) {
+                    console.log("Got Commit ID", data.commit.sha);
+                    convertToJSDelivr(gitrepo, files, data.commit.sha);
+                },
+                error: function(request, status, error) {
+                    alert("Error");
+                }
+            });
+        }
+
+        getContent([prompt("Username of Repo Owner"), prompt("Repo")]);
+
+    }
+
+    this.authenticate = function() {
+        var oauth = localStorage.getItem("oauth") || prompt("Paste your oAuth Key. See the README for instructions on generation");
+
+        $.ajax({
+            type: "get",
+            url: "https://api.github.com/user?access_token=" + oauth,
+            success: function(data, text) {
+                alert("Login Succesful :D");
+                localStorage.setItem("oauth", oauth);
+                modes["github"]().import();
+            },
+            error: function(request, status, error) {
+                alert("Login Error, please check your oAuth key");
+                localStorage.removeItem("oauth");
+                modes["github"]().authenticate();
+            }
+        });
+
+    }
+
+    return this;
 }
+
+
+
+
 
 var currentFile = null;
 
@@ -329,6 +398,7 @@ var app = new Vue({
     el: '#app',
     data: {
         accordion: 0,
+        mode: "import",
         vdir: {
 
         }
@@ -347,8 +417,7 @@ makeFile("/imgs/mountain.jpg", "https://www.w3schools.com/css/mountain.jpg", tru
 makeFile("/index.html", "<link rel='stylesheet' href='./css/main.css' type='text/css' />\n<h1>Hello :D</h1>\n<img src='./imgs/test.png'>\n<script src='/js/main.js'></script>");
 */
 
-document.getElementById("runCode").onclick = runCode;
-document.getElementById("createFile").onclick = function() {
+function createFile() {
 
     var type = prompt("Type 'remote' for remote file") === 'remote' ? true : false;
 
@@ -369,4 +438,4 @@ document.getElementById("createFile").onclick = function() {
     }
 }
 
-authenticate();
+//authenticate();

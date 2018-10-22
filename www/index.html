@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Geddit</title>
+    <title>UltimumIDE</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
@@ -33,13 +33,22 @@
 <body>
     <div id="app">
         <div id="fileEditor">
-            <div class="btn-group btn-group-justified" style="width:100%;">
-                <a href="#" class="btn btn-primary btn-lg" id="runCode" style="width:100%;">
-              Run
-            </a>
-                <a href="#" class="btn btn-success btn-lg" id="createFile" style="width:100%;">
-              Create
-            </a>
+            <div class="btn-group btn-group-justified" style="width:100%;" v-if="mode == 'import'">
+                <a href="#" class="btn btn-primary btn-lg" id="importGithub" onclick='modes["github"]().authenticate();' style="width:100%;">
+                  Github
+                </a>
+                <a href="#" class="btn btn-success btn-lg" id="importPHP" onclick='modes["php"]().authenticate();' style="width:100%;">
+                  PHP
+                </a>
+            </div>
+
+            <div class="btn-group btn-group-justified" style="width:100%;" v-if="mode == 'editor'">
+                <a href="#" class="btn btn-primary btn-lg" id="runCode" onclick="runCode();" style="width:100%;">
+                  Run
+                </a>
+                <a href="#" class="btn btn-success btn-lg" id="createFile" onclick="createFile();" style="width:100%;">
+                  Create
+                </a>
             </div>
             <div v-for="file in vdir">
                 <file-listing v-bind:file="file" v-if="file.type != 'folder'"></file-listing>
