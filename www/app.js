@@ -238,34 +238,52 @@ function runCode() {
     if (currentFile === null) { return };
 
     switch (currentFile.type) {
-        case "js":
-            eval(editor.getValue());
-            break;
         case "html":
-            var w = window.open('', "", "scrollbars=yes");
+            if (localStorage.getItem("popup-alert") === undefined) {
+                localStorage.setItem("popup-alert", 0);
+            }
+
+            if (localStorage.getItem("popup-alert") < 3) {
+                alert("Warning, if an adblocker is enabled it might not load.");
+            }
+
+            localStorage.setItem("popup-alert", localStorage.getItem("popup-alert") + 1);
+
 
             var content = editor.getValue();
 
-            w.document.write(content);
-
-            var scripts = w.document.querySelectorAll('script'),
-                i;
-            console.log(scripts);
-            for (i = 0; i < scripts.length; ++i) {
-
-                let src = scripts[i].getAttribute('src');
-                console.log(src);
-                if (pathToVDir(src) != undefined) {
-                    scripts[i].removeAttribute('src');
-                    scripts[i].innerHTML = pathToVDir(src).content;
-                    let temp = document.createElement("script");
-                    temp.innerHTML = pathToVDir(src).content;
-                    w.document.body.appendChild(temp);
-                    scripts[i].remove();
-                }
+            var scripts = content.match(/(?=<script).*?>/g);
+            if (scripts) {
+                var srcs = scripts.map(i => i.match(/src="(.*)"/)[1]);
+                srcs.forEach(src => {
+                    if (!src.match('http') && pathToVDir(src)) {
+                        content = content.replace(src, 'data:application/javascript;base64,' + btoa(pathToVDir(src).content));
+                    }
+                })
             }
 
-            var styles = w.document.querySelectorAll('link'),
+
+            var styles = content.match(/(?=<link).*?>/g);
+            if (styles) {
+                var hrefs = styles.map(i => i.match(/href="(.*)"/)[1]);
+                hrefs.forEach(src => {
+                    src = src.split('"')[0];
+                    console.log(src);
+                    if (!src.match('http') && pathToVDir(src)) {
+                        content = content.replace(src, 'data:text/css;base64,' + btoa(pathToVDir(src).content));
+                    }
+                })
+            }
+            console.log(hrefs);
+
+            var myblob = new Blob([content], {
+                type: 'text/html'
+            });
+
+            var w = window.open(URL.createObjectURL(myblob), "", "scrollbars=yes");
+            //$("body", w.document).append(content);
+
+            /*var styles = w.document.querySelectorAll('link'),
                 i;
 
             for (i = 0; i < styles.length; ++i) {
@@ -281,15 +299,15 @@ function runCode() {
                     }
                 }
 
-            }
+            }*/
 
-            var remotes = searchForRemotes(app.vdir);
+            /*var remotes = searchForRemotes(app.vdir);
 
             for (var i in remotes) {
                 w.document.body.innerHTML = w.document.body.innerHTML.replaceAll("." + remotes[i].path, remotes[i].url);
                 w.document.body.innerHTML = w.document.body.innerHTML.replaceAll(remotes[i].path, remotes[i].url);
                 w.document.body.innerHTML = w.document.body.innerHTML.replaceAll(remotes[i].path.substr(1), remotes[i].url);
-            }
+            }*/
 
             break;
 
